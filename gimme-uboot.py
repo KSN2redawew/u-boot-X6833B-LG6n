@@ -50,26 +50,10 @@ def replace_partition(lk_path, uboot_path, output_path, load_addr=0xFFFFFFFF, mo
     uboot_partition.certs = original_lk.certs.copy()
     
     lk_image.partitions['lk'] = uboot_partition
-    rebuild_image_contents(lk_image)
+    lk_image._rebuild_contents()
     
     print("Saving modified image to: %s" % output_path)
     lk_image.save(output_path)
-
-def rebuild_image_contents(lk_image):
-    new_contents = bytearray()
-    partition_names = list(lk_image.partitions.keys())
-    
-    for i, (name, partition) in enumerate(lk_image.partitions.items()):
-        partition.header.image_list_end = 1 if i == len(partition_names) - 1 else 0
-        partition.end_offset = len(new_contents) + partition.header.size + partition.header.data_size
-        
-        alignment = partition.header.alignment if partition.header.is_extended else 8
-        if alignment and partition.end_offset % alignment:
-            partition.end_offset += alignment - (partition.end_offset % alignment)
-        
-        new_contents.extend(bytes(partition))
-    
-    lk_image.contents = new_contents
 
 def main():
     parser = argparse.ArgumentParser()
